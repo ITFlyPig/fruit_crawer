@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.1.xsd
+        http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.1.xsd
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
+
+    <!--Spring的基本配置开始-->
+
+    <!-- scan the package and the sub package -->
+    <context:component-scan base-package="com.wangyuelin"/>
+
+    <!-- don't handle the static resource -->
+    <mvc:default-servlet-handler />
+
+    <!-- if you use annotation you must configure following setting -->
+    <mvc:annotation-driven />
+
+    <!-- configure the InternalResourceViewResolver -->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+          id="internalResourceViewResolver">
+        <!-- 前缀 -->
+        <property name="prefix" value="/WEB-INF/jsp/" />
+        <!-- 后缀 -->
+        <property name="suffix" value=".jsp" />
+    </bean>
+
+
+    <!--Spring的基本配置结束-->
+
+    <!--Spring的返回json数据配置开始-->
+
+    <!--<bean id="stringConverter"-->
+          <!--class="org.springframework.http.converter.StringHttpMessageConverter">-->
+        <!--<property name="supportedMediaTypes">-->
+            <!--<hotNovelList>-->
+                <!--<value>text/plain;charset=UTF-8</value>-->
+            <!--</hotNovelList>-->
+        <!--</property>-->
+    <!--</bean>-->
+    <!--<bean id="jsonConverter"-->
+          <!--class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">-->
+        <!--<property name="supportedMediaTypes">-->
+            <!--<hotNovelList>-->
+                <!--<value>text/html;charset=UTF-8</value>-->
+                <!--<value>text/json;charset=UTF-8</value>-->
+                <!--<value>application/json;charset=UTF-8</value>-->
+            <!--</hotNovelList>-->
+        <!--</property>-->
+
+    <!--</bean>-->
+    <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+        <property name="messageConverters">
+            <list>
+                <bean class="org.springframework.http.converter.StringHttpMessageConverter"/>
+            </list>
+            <!--<hotNovelList>-->
+                <!--<ref bean="stringConverter" />-->
+                <!--<ref bean="jsonConverter" />-->
+            <!--</hotNovelList>-->
+        </property>
+    </bean>
+
+    <!--Spring的返回json数据配置结束-->
+
+
+
+
+    <!--    开始Spring和Mybatis的整合 -->
+
+    <!-- 1. 数据源 : DriverManagerDataSource  定义数据库的连接信息 -->
+    <bean id="dataSource"
+          class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver" />
+        <!-- 指定连接时的编码为-8,不然中文可能乱码 -->
+        <property name="url" value="jdbc:mysql://localhost:3306/Test?useUnicode=true&amp;characterEncoding=UTF-8&amp;zeroDateTimeBehavior=convertToNull" />
+        <property name="username" value="root" />
+        <property name="password" value="root" />
+    </bean>
+
+    <!--
+        2. mybatis的SqlSession的工厂: SqlSessionFactoryBean
+        dataSource:引用数据源
+        configLocation：MyBatis定义数据源,同意加载配置
+    -->
+
+    <!-- spring和MyBatis完美整合，不需要mybatis的配置映射文件 -->
+
+
+    <!--
+        3. mybatis自动扫描加载Sql映射文件/接口 : MapperScannerConfigurer sqlSessionFactory
+
+        basePackage:指定sql映射文件/接口所在的包（自动扫描）
+    -->
+    <!-- 接口所在包名，Spring会自动查找其下的类并实例化为bean ,包下的类需要使用@MapperScan注解,否则容器注入会失败 -->
+    <!--
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.wangyuelin.mapper"></property>
+        <property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+    </bean>
+    -->
+
+    <!--
+        4. 事务管理 : DataSourceTransactionManager dataSource:引用上面定义的数据源
+    -->
+    <bean id="txManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <!-- 5. 使用声明式事务
+         transaction-manager：引用上面定义的事务管理器
+     -->
+    <tx:annotation-driven transaction-manager="txManager" />
+
+
+</beans>
