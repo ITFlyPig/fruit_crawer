@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" 
-"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
 <configuration>
-	<!-- 实体类,简称 -设置别名 -->
-	<typeAliases>
-		<!-- 单个别名定义 <typeAlias alias="User2" type="com.wangyuelin.model.User22" /> -->
+    <!-- 实体类,简称 -设置别名 -->
+    <typeAliases>
+        <!-- 单个别名定义 <typeAlias alias="User2" type="com.wangyuelin.model.User22" /> -->
 
-		<!-- 批量定义别名 指定包名，mybatis自动扫描包中的model类，自动定义别名，别名就是类名(首字母大写或小写) -->
-		<package name="com.wangyuelin.model" />
-	</typeAliases>
-	<!-- 实体接口映射资源 -->
-	<mappers>
-		<!-- 批量加载映射文件 需要将mapper接口类名和mapper.xml映射文件名称保持一致且在同一个目录中， 注意：要使用的是mapper代理。两个文件要在同一个目录 -->
-		 <package name="com.wangyuelin.mapper"/> 
-	</mappers>
+        <!-- 批量定义别名 指定包名，mybatis自动扫描包中的model类，自动定义别名，别名就是类名(首字母大写或小写) -->
+        <package name="com.wangyuelin.model"/>
+    </typeAliases>
+    <!-- 实体接口映射资源 -->
+    <mappers>
+        <!-- 批量加载映射文件 需要将mapper接口类名和mapper.xml映射文件名称保持一致且在同一个目录中， 注意：要使用的是mapper代理。两个文件要在同一个目录 -->
+        <package name="com.wangyuelin.mapper"/>
+    </mappers>
 </configuration>  
