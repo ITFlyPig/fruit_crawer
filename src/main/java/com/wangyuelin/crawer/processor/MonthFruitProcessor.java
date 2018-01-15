@@ -1,6 +1,12 @@
 package com.wangyuelin.crawer.processor;
 
 import com.wangyuelin.crawer.model.MonthFruitBean;
+import com.wangyuelin.crawer.service.FruitInfoService;
+import com.wangyuelin.crawer.service.impl.FruitInfoServiceImpl;
+import com.wangyuelin.service.UserService;
+import com.wangyuelin.util.TextUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
@@ -12,7 +18,16 @@ import us.codecraft.xsoup.Xsoup;
 import java.util.ArrayList;
 import java.util.List;
 
+@Component
 public class MonthFruitProcessor implements PageProcessor {
+
+    @Autowired
+    private FruitInfoService fruitInfoService;
+
+    private int[] monthInt = new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+    private String[] monthArray = new String[]{"一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"};
+
+
     private Site site = Site.me().setRetryTimes(3).setSleepTime(0);
     public static final String url = "https://jingyan.baidu.com/article/9113f81b042ffa2b3214c7bc.html";//抽取的网址
 
@@ -30,16 +45,16 @@ public class MonthFruitProcessor implements PageProcessor {
 
             MonthFruitBean bean = new MonthFruitBean();
             bean.setMonth(month);
-            bean.setFruitStr(fruitStr);
+            String rs = fruitStr.replaceAll("\\u00A0"," ");//去除160的空格
+            bean.setFruitStr(TextUtil.removeSpecialCharacter(rs, " ", " \n"));
+            bean.setMonthNum(parseMonth(month));
             list.add(bean);
 
         }
 
         page.putField("monthFruit", list);
         //保存到数据库
-
-
-
+        fruitInfoService.save(list);
 
     }
 
@@ -48,11 +63,24 @@ public class MonthFruitProcessor implements PageProcessor {
     }
 
 
-    public void test(){
+    /**
+     * 将大写的月份转为数字的月份
+     * @param monthStr
+     * @return
+     */
+    private int parseMonth(String monthStr){
+        if (TextUtil.isEmpty(monthStr)){
+            return 0;
+        }
 
+        int size = monthArray.length;
+        for (int i = size - 1; i >= 0; i--){
+            if (monthStr.contains(monthArray[i])){
+                return monthInt[i];
+            }
+        }
+        return 0;
     }
-
-
 
 
 }

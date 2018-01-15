@@ -1,11 +1,15 @@
 package com.wangyuelin.crawer.processor;
 
+import com.wangyuelin.crawer.model.Fruit;
 import com.wangyuelin.crawer.model.Tag;
+import com.wangyuelin.crawer.service.FruitInfoService;
 import org.apache.http.util.TextUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
@@ -19,7 +23,11 @@ import java.util.List;
 /**
  * 获取水果的功效
  */
+@Component
 public class FruitFuncProcessor implements PageProcessor {
+    @Autowired
+    private FruitInfoService fruitInfoService;
+
     private Site site = Site.me().setRetryTimes(3).setSleepTime(0)
             .setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_2) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.65 Safari/537.31");
 
@@ -53,20 +61,37 @@ public class FruitFuncProcessor implements PageProcessor {
         if (TextUtils.isEmpty(url)) {
             return;
         }
+
         String fruit = urlMap.get(url);
-        if (url.startsWith(FUNC_PREFIX)) {//功效
+
+
+//        if (TextUtils.isEmpty(fruit)){
+//            return;
+//        }
+        if (url.startsWith(FUNC_PREFIX) && !TextUtils.isEmpty(fruit)) {//功效
             String func = page.getHtml().xpath("//div[@class='op_exactqa_s_answer']/text()").get();
             String icon = page.getHtml().xpath("//div[@class='op_exactqa_main']//img/@src").get();
             String detail = getDetailUrl(fruit);
             page.addTargetRequest(detail);
 
+            //将解析的结果保存到数据库
+            Fruit oneFruit = new Fruit();
+            oneFruit.setName(fruit);
+            oneFruit.setIcon(icon);
+            oneFruit.setFunc(func);
+            fruitInfoService.saveBase(oneFruit);
+
 
         } else if (url.startsWith(DETAIL_PREFIX)) {//详情
             String desc = page.getHtml().xpath("//div[@class='lemma-summary']/div").get();//简介
-            String watedDesc = parseDeatil(desc);
-            System.out.println("简介：" + watedDesc);
+            String descNoTag = parseDeatil(desc);
+            //更新数据库的简介
+            if (!TextUtils.isEmpty(descNoTag)){
+                System.out.println("简介：" + descNoTag);
+                fruitInfoService.updateFruitDesc(fruit, descNoTag);//移除多余标签的简介
+            }
             List<String> divs = page.getHtml().xpath("//div[@label-module]").all();
-            System.out.println("内容页的数据：" + divs.size());
+//            System.out.println("内容页的数据：" + divs.size());
             List<Tag> list = pasreNeedtag(divs);
 //            System.out.println("各个事项获取的结果：" + list);
         }
@@ -126,7 +151,7 @@ public class FruitFuncProcessor implements PageProcessor {
 
 
     /**
-     * 解析得到文化相关的标签
+     * 解析得到感兴趣相关的标签
      *
      * @param
      * @return
@@ -149,11 +174,9 @@ public class FruitFuncProcessor implements PageProcessor {
             Element child = elements.first().getElementsByTag("div").first();
 
             if (isTitleTag(child) && isNeedTag(child)) {//开始获取标题下的内容
-                System.out.println("开始解析标签：---------------\n" + divs.get(i) + "\n -------------------------------");
                 Tag tag = new Tag();
                 String tagStr = child.text();
                 tag.setTagText(tagStr);//标题
-                System.out.println("标签标题：" + tagStr);
 
                 int temp = i + 1;
                 Element next = null;
@@ -184,7 +207,6 @@ public class FruitFuncProcessor implements PageProcessor {
                         break;
                     }
                 }
-                System.out.println(" 标题下的内容：" + tag.getChildSText());
                 i = --temp;//和for循环中的++做抵消
                 tagList.add(tag);
 
@@ -220,12 +242,9 @@ public class FruitFuncProcessor implements PageProcessor {
             return false;
         }
         String lableStr = element.attr("label-module");
-        System.out.println("label-module属性对应的值：" + lableStr);
         if (!TextUtils.isEmpty(lableStr) && lableStr.equalsIgnoreCase("para-title")) {
-            System.out.println("是否是标题" + "true");
             return true;
         }
-        System.out.println("是否是标题" + "false");
         return false;
     }
 
@@ -261,7 +280,6 @@ public class FruitFuncProcessor implements PageProcessor {
             return false;
         }
         String text = getElementTitle(element);
-        System.out.println("element的标题:" + text);
         if (TextUtils.isEmpty(text)) {
             return false;
         }

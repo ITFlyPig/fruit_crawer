@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangyuelin.crawer.mapper.FruitMapper">
+
+	<insert id="saveFruitBaseInfo" parameterType="Fruit">
+		INSERT INTO fruit(icon, name, func) VALUES (#{icon}, #{name}, #{func})
+	</insert>
+
+	<update id="updateFruitBaseInfo" parameterType="Fruit">
+		UPDATE fruit SET icon = #{icon}, func = #{func} WHERE name = #{name}
+	</update>
+
+	<select id="getByName" parameterType="java.lang.String" resultType="Fruit">
+		SELECT * FROM fruit WHERE name = #{name}
+	</select>
+
+	<!--多参数的方式-->
+	<update id="updateFruitDesc">
+		UPDATE fruit SET des = #{0} WHERE name = #{1}
+	</update>
+</mapper>

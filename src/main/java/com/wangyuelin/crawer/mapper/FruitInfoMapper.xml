@@ -8,6 +8,7 @@
  -->
 <mapper namespace="com.wangyuelin.crawer.mapper.FruitInfoMapper">
 
+	<!--
 	<insert id="save" parameterType="java.util.List">
 		insert into month_fruit(month_num,fruits)
 		 values
@@ -18,12 +19,18 @@
 		 </foreach>
 	</insert>
 
+	-->
+
 	<insert id="save" parameterType="MonthFruitBean">
-		INSERT INTO month_fruit(month_num, fruits) VALUES (#{month}, #{fruitStr})
+		INSERT INTO month_fruit(month_num, fruits) VALUES (#{monthNum}, #{fruitStr})
 	</insert>
 
 
 	<select id="getByMonth" parameterType="java.lang.Integer" resultType="MonthFruitBean">
 		SELECT month_fruit.month_num AS monthNum, month_fruit.fruits AS fruitStr FROM month_fruit WHERE month_num=#{month}
 	</select>
+
+	<update id="update" parameterType="MonthFruitBean">
+		UPDATE month_fruit SET fruits=#{fruitStr} WHERE month_num=#{monthNum}
+	</update>
 </mapper>

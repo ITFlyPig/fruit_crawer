@@ -7,7 +7,10 @@
         <!-- 单个别名定义 <typeAlias alias="User2" type="com.wangyuelin.model.User22" /> -->
 
         <!-- 批量定义别名 指定包名，mybatis自动扫描包中的model类，自动定义别名，别名就是类名(首字母大写或小写) -->
-        <package name="com.wangyuelin.model"/>
+        <!--<package name="com.wangyuelin.model"/>-->
+        <typeAlias type="com.wangyuelin.crawer.model.Fruit"/>
+        <typeAlias alias="User" type="com.wangyuelin.model.User" />
+        <typeAlias alias="MonthFruitBean" type="com.wangyuelin.crawer.model.MonthFruitBean"/>
     </typeAliases>
     <!-- 实体接口映射资源 -->
     <mappers>

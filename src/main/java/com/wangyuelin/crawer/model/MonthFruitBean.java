@@ -39,4 +39,10 @@ public class MonthFruitBean {
     public void setMonthNum(int monthNum) {
         this.monthNum = monthNum;
     }
+
+    @Override
+    public String toString() {
+        String res = "month = " + getMonth() + " fruits = " + getFruits() +  " fruitStr = " + getFruitStr() + " monthNum = " + getMonthNum();
+        return res;
+    }
 }
