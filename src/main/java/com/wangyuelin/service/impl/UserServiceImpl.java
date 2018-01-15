@@ -38,7 +38,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	public User findByName(String name) {
-		return null;
+		return mapper.findByName(name);
 	}
 
 	public User findById(int id) {

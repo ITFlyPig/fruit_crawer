@@ -15,8 +15,4 @@
 		SELECT * FROM fruit WHERE name = #{name}
 	</select>
 
-	<!--多参数的方式-->
-	<update id="updateFruitDesc">
-		UPDATE fruit SET des = #{0} WHERE name = #{1}
-	</update>
 </mapper>

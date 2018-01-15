@@ -96,4 +96,10 @@ public class TestController {
     }
 
 
+    @RequestMapping("/findByName")
+    public @ResponseBody User findByName(String name){
+        return userService.findByName(name);
+
+    }
+
 }
