@@ -7,6 +7,7 @@ public class MaterialBean {
     private String name;//用料的名称
     private String num;//用料的数量
     private String img;//材料的图片
+    private int type;//表示是主料还是辅料 1:主料  2：辅料
 
     public String getName() {
         return name;
@@ -36,5 +37,13 @@ public class MaterialBean {
 
     public void setImg(String img) {
         this.img = img;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public void setType(int type) {
+        this.type = type;
     }
 }

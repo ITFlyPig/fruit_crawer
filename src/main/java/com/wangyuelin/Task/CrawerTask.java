@@ -1,5 +1,7 @@
 package com.wangyuelin.Task;
 
+import com.wangyuelin.crawer.processor.MonthFruitProcessor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -8,8 +10,13 @@ import org.springframework.stereotype.Component;
  */
 @Component("taskJob")
 public class CrawerTask {
-    @Scheduled(cron = "0 0/2 * * * ?")
+
+    @Autowired
+    private MonthFruitProcessor monthFruitProcessor;
+
+    @Scheduled(cron = "0 0/10 * * * ?")
     public void crawerFruitInfo(){
-        System.out.println("开始爬取水果信息");
+//        monthFruitProcessor.start();
+
     }
 }

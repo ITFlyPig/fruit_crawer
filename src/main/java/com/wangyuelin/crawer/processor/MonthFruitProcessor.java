@@ -1,11 +1,16 @@
 package com.wangyuelin.crawer.processor;
 
 import com.wangyuelin.crawer.model.MonthFruitBean;
+import com.wangyuelin.crawer.processor.listener.Event;
+import com.wangyuelin.crawer.processor.listener.Publisher;
 import com.wangyuelin.crawer.service.FruitInfoService;
 import com.wangyuelin.crawer.service.impl.FruitInfoServiceImpl;
 import com.wangyuelin.service.UserService;
+import com.wangyuelin.util.Constant;
 import com.wangyuelin.util.TextUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
@@ -20,6 +25,9 @@ import java.util.List;
 
 @Component
 public class MonthFruitProcessor implements PageProcessor {
+
+    @Autowired
+    Publisher publisher;
 
     @Autowired
     private FruitInfoService fruitInfoService;
@@ -56,6 +64,10 @@ public class MonthFruitProcessor implements PageProcessor {
         //保存到数据库
         fruitInfoService.save(list);
 
+        //发布爬取完成的事件
+        publisher.publish("月份爬取完成", Constant.EventType.MONTH_FRUIT_DONE);
+
+
     }
 
     public Site getSite() {
@@ -82,5 +94,13 @@ public class MonthFruitProcessor implements PageProcessor {
         return 0;
     }
 
+
+    /**
+     * 开始爬取
+     */
+    public void start(){
+        Spider.create(this).addPipeline(new ConsolePipeline()).addUrl(url).thread(3).run();
+
+    }
 
 }

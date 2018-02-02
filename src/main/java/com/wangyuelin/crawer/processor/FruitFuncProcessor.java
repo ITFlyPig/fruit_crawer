@@ -33,7 +33,6 @@ public class FruitFuncProcessor implements PageProcessor {
 
     public static final String url = "https://www.baidu.com/s?wd=芒果的功效与作用";//抽取的网址
 
-    private String[] fruits = new String[]{"葡萄"};//要查询的水果放这里
 
     private boolean isAdded;//是否添加了查询的url
     private HashMap<String, String> urlMap = new HashMap<String, String>();
@@ -46,9 +45,9 @@ public class FruitFuncProcessor implements PageProcessor {
         //添加所有水果的功效查询url
         if (!isAdded) {
             isAdded = true;
-            int size = fruits.length;
+            int size = fruits.size();
             for (int i = 0; i < size; i++) {
-                String fruit = fruits[i];
+                String fruit = fruits.get(i);
                 String url = getQueryUrl(fruit);
                 if (!TextUtils.isEmpty(url)) {
                     page.addTargetRequest(url);
@@ -73,6 +72,7 @@ public class FruitFuncProcessor implements PageProcessor {
             String icon = page.getHtml().xpath("//div[@class='op_exactqa_main']//img/@src").get();
             String detail = getDetailUrl(fruit);
             page.addTargetRequest(detail);
+            urlMap.put(detail, fruit);
 
             //将解析的结果保存到数据库
             Fruit oneFruit = new Fruit();
@@ -87,13 +87,11 @@ public class FruitFuncProcessor implements PageProcessor {
             String descNoTag = parseDeatil(desc);
             //更新数据库的简介
             if (!TextUtils.isEmpty(descNoTag)){
-                System.out.println("简介：" + descNoTag);
                 fruitInfoService.updateFruitDesc(fruit, descNoTag);//移除多余标签的简介
             }
             List<String> divs = page.getHtml().xpath("//div[@label-module]").all();
-//            System.out.println("内容页的数据：" + divs.size());
             List<Tag> list = pasreNeedtag(divs);
-//            System.out.println("各个事项获取的结果：" + list);
+            fruitInfoService.saveTags(list, fruit);
         }
 
 
@@ -144,6 +142,9 @@ public class FruitFuncProcessor implements PageProcessor {
 
     private String parseDeatil(String deatilHtml) {
         String noTagsStr = removeAllTags(deatilHtml);
+        if (TextUtils.isEmpty(noTagsStr)){
+            return noTagsStr;
+        }
         noTagsStr = noTagsStr.replaceAll(" ", "");//移除空格
         noTagsStr = noTagsStr.replaceAll("\n", "");//移除换行
         return noTagsStr;
@@ -175,8 +176,8 @@ public class FruitFuncProcessor implements PageProcessor {
 
             if (isTitleTag(child) && isNeedTag(child)) {//开始获取标题下的内容
                 Tag tag = new Tag();
-                String tagStr = child.text();
-                tag.setTagText(tagStr);//标题
+                String tagStr = getTagContent(child);
+                tag.setTag(tagStr);//标题
 
                 int temp = i + 1;
                 Element next = null;
@@ -346,6 +347,42 @@ public class FruitFuncProcessor implements PageProcessor {
        Element element = Jsoup.parse(html).getAllElements().first().getElementsByTag("div").first();
        String res = getElementHText(element);
        System.out.println("res:" + res);
+   }
+
+    /**
+     * 获取tag的文本
+     * @param div
+     * @return
+     */
+   private String getTagContent(Element div){
+       Elements h2s = div.getElementsByTag("h2");
+       if(h2s != null){
+           Element h2 = h2s.first();
+           if (h2 != null){
+               return h2.ownText();
+           }
+
+       }
+
+       Elements h3s = div.getElementsByTag("h3");
+       if(h3s != null){
+           Element h3 = h3s.first();
+           return h3.ownText();
+       }
+
+       return null;
+
+   }
+
+    private List<String> fruits;
+
+    /**
+     * 开始爬取
+     */
+   public void start(){
+       fruits = fruitInfoService.getFruits();
+       Spider.create(this).addPipeline(new ConsolePipeline()).addUrl(getQueryUrl("芒果")).thread(1).run();
+
    }
 
 }

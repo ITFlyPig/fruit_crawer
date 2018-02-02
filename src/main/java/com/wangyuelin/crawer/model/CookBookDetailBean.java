@@ -39,4 +39,5 @@ public class CookBookDetailBean {
     public void setSteps(List<StepBean> steps) {
         this.steps = steps;
     }
+
 }

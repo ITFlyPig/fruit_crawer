@@ -1,6 +1,7 @@
 package com.wangyuelin.controller;
 
 import com.wangyuelin.crawer.model.MonthFruitBean;
+import com.wangyuelin.crawer.processor.CookbookProcessor;
 import com.wangyuelin.crawer.processor.Crawer;
 import com.wangyuelin.crawer.processor.FruitFuncProcessor;
 import com.wangyuelin.crawer.processor.MonthFruitProcessor;
@@ -29,6 +30,9 @@ public class TestController {
     @Autowired
     private FruitInfoService fruitInfoService;
 
+    @Autowired
+    private CookbookProcessor cookbookProcessor;
+
     /**
      * 在返回的数据添加@ResponseBody注解，表明是要转换为json
      * 不添加的话则表示返回的是视图资源
@@ -38,20 +42,22 @@ public class TestController {
 
     /**
      * 返回视图
+     *
      * @return
      */
     @RequestMapping("/index")
-    public String index(){
+    public String index() {
         return "/jsp/index.jsp";
     }
 
     /**
      * 返回json
+     *
      * @return
      */
     @RequestMapping("/getUser")
     public @ResponseBody
-    User getUser(){
+    User getUser() {
         User user = new User();
         user.setId(3232);
         user.setName("王厂长");
@@ -60,22 +66,19 @@ public class TestController {
     }
 
 
-
     @Autowired
     private UserService userService;
 
     @RequestMapping("/getUserBySql")
     public @ResponseBody
-    User getUserBySql(){
-
-        BasicConfigurator.configure();
+    User getUserBySql() {
         Spider.create(fruitFuncProcessor).addPipeline(new ConsolePipeline()).addUrl(FruitFuncProcessor.url).thread(4).run();
         return userService.findById(1);
     }
 
 
     @RequestMapping("/addOne")
-    public String addOne(String name){
+    public String addOne(String name) {
         MonthFruitBean bean = new MonthFruitBean();
         bean.setMonthNum(12);
         bean.setMonth("12");
@@ -97,9 +100,17 @@ public class TestController {
 
 
     @RequestMapping("/findByName")
-    public @ResponseBody User findByName(String name){
+    public @ResponseBody
+    User findByName(String name) {
         return userService.findByName(name);
 
+    }
+
+    @RequestMapping("/cookbook")
+    public @ResponseBody
+    String startCookbook(String fruit) {
+        fruitFuncProcessor.start();
+        return "index";
     }
 
 }

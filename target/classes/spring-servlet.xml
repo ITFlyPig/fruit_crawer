@@ -88,7 +88,7 @@
     -->
     <!-- 接口所在包名，Spring会自动查找其下的类并实例化为bean ,包下的类需要使用@MapperScan注解,否则容器注入会失败 -->
     <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-        <property name="basePackage" value="com.wangyuelin.mapper;com.wangyuelin.crawer.mapper"></property>
+        <property name="basePackage" value="com.wangyuelin.mapper;com.wangyuelin.crawer.mapper;com.wangyuelin.app.mapper"></property>
         <property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
     </bean>
 

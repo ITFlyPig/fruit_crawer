@@ -4,11 +4,18 @@ import com.wangyuelin.crawer.model.CookBookBean;
 import com.wangyuelin.crawer.model.CookBookDetailBean;
 import com.wangyuelin.crawer.model.MaterialBean;
 import com.wangyuelin.crawer.model.StepBean;
+import com.wangyuelin.crawer.processor.listener.Event;
+import com.wangyuelin.crawer.service.FruitInfoService;
+import com.wangyuelin.util.Constant;
+import com.wangyuelin.util.TextUtil;
 import org.apache.http.util.TextUtils;
 import org.apache.log4j.BasicConfigurator;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationListener;
+import org.springframework.stereotype.Component;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
@@ -16,32 +23,70 @@ import us.codecraft.webmagic.pipeline.ConsolePipeline;
 import us.codecraft.webmagic.processor.PageProcessor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
  * 处理每种水果做法的类
  */
-public class CookbookProcessor implements PageProcessor {
+@Component
+public class CookbookProcessor implements PageProcessor, ApplicationListener<Event>{
+    private HashMap<String, String> urlMap = new HashMap<String, String>();
+
+    @Autowired
+    private FruitInfoService fruitInfoService;
+
     private Site site = Site.me().setRetryTimes(3).setSleepTime(0)
             .setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_2) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.65 Safari/537.31");
 
     private static String PREFIX = "http://so.meishi.cc/?&q=";
     private static String SUFIX = "&sort=onclick";
     private static String COOK_PREFIX = "http://www.meishij.net/zuofa";
+    private StringBuilder materialStr;
+    private StringBuilder stepStr;
+    private List<String> fruits;
+    private boolean added = false;
+
+
 
     public void process(Page page) {
+        addUrl(page);//添加待处理的url
+
         String url = page.getUrl().get();
         if (TextUtils.isEmpty(url)) {
             return;
         }
         if (url.startsWith(COOK_PREFIX)) {//解析得到具体的做法
+            String cookbookName = page.getHtml().xpath("//a[@id='tongji_title']/text()").get();
+            System.out.println("获取得到的菜谱的名称：" + cookbookName);
+            if (TextUtils.isEmpty(cookbookName)){
+                return;
+            }
+
+            materialStr = new StringBuilder();
             String main = page.getHtml().xpath("//div[@class='yl zl clearfix']").get();//住料
-            parseMain(getElement(main));
+            List<MaterialBean> mainList = parseMain(getElement(main));
             String assistant = page.getHtml().xpath("//div[@class='yl fuliao clearfix']").get();//辅料
-            parseAssistant(getElement(assistant));
+            List<MaterialBean> assList = parseAssistant(getElement(assistant));
+
+            String mainS = materialStr.toString();
+
+
+            System.out.println("材料："  + mainS);
+           fruitInfoService.saveCookbookDetailMaterials(cookbookName, mainS);
+
+            //将材料保存到数据库
+            fruitInfoService.saveMaterials(mainList, cookbookName);
+            fruitInfoService.saveMaterials(assList, cookbookName);
+
+
 
             String stepStr = page.getHtml().xpath("//div[@class='editnew edit]").get();//步骤
-            parseSteps(stepStr);
+            List<StepBean> steps = parseSteps(stepStr);
+
+            //将菜谱的步骤保存到数据库
+
+            fruitInfoService.saveSteps(steps, cookbookName);
 
 
         } else if (url.startsWith(PREFIX)) {//解析得到菜谱的简介
@@ -51,6 +96,10 @@ public class CookbookProcessor implements PageProcessor {
                 page.addTargetRequest(cookBookBean.getDetailUrl());
                 break;
             }
+
+            //将菜谱的简介保存到数据库
+            fruitInfoService.saveCookbookIntros(cookList);
+
         }
 
 
@@ -60,20 +109,49 @@ public class CookbookProcessor implements PageProcessor {
         return site;
     }
 
-    public static String getUrl(String fruit) {
+    /**
+     * 添加待处理的url
+     * @param page
+     */
+    private void addUrl(Page page){
+        if (fruits == null){
+            return;
+        }
+        if (!added){
+            added = true;
+
+        }
+
+        int size = fruits.size();
+        for (int i = 0; i < size; i++){
+            String url = getUrl(fruits.get(i));
+            page.addTargetRequest(url);
+        }
+    }
+
+
+
+
+    /**
+     * 获取拼接后的url
+     * @param fruit
+     * @return
+     */
+    public  String getUrl(String fruit) {
         if (TextUtils.isEmpty(fruit)) {
             return null;
         }
-        return PREFIX + fruit + SUFIX;
+        String url = PREFIX + fruit + SUFIX;
+        urlMap.put(url, fruit);
+        return url;
 
     }
 
-    public static void main(String[] args) {
-
-
-//
-    }
-
+    /**
+     * 菜谱的简介
+     * @param cookBookList
+     * @return
+     */
     private List<CookBookBean> parseIntro(List<String> cookBookList) {
         if (cookBookList == null) {
             return null;
@@ -83,6 +161,9 @@ public class CookbookProcessor implements PageProcessor {
         for (int i = 0; i < size; i++) {
             CookBookBean cookBookBean = new CookBookBean();
             Element element = getElement(cookBookList.get(i));
+            if (element == null){
+                continue;
+            }
             Element img = element.getElementsByTag("img").first();
             cookBookBean.setImg(img.attr("src"));
             Element a = element.getElementsByClass("cpn").first();
@@ -103,6 +184,9 @@ public class CookbookProcessor implements PageProcessor {
      * @return
      */
     private Element getElement(String div) {
+        if (TextUtil.isEmpty(div)){
+            return null;
+        }
         return Jsoup.parse(div).getAllElements().first().getElementsByTag("div").first();
     }
 
@@ -119,6 +203,9 @@ public class CookbookProcessor implements PageProcessor {
      */
     private List<MaterialBean> parseMain(Element div) {
         ArrayList<MaterialBean> list = new ArrayList<MaterialBean>();
+        if (div == null){
+            return list;
+        }
 
         Elements lis = div.getElementsByTag("li");
         int size = lis.size();
@@ -139,6 +226,13 @@ public class CookbookProcessor implements PageProcessor {
                 materialBean.setImg(img.attr("src"));
             }
 
+            materialBean.setType(1);
+
+            if (TextUtil.isEmpty(materialStr.toString())){
+                materialStr.append(materialBean.getName());
+            }else {
+                materialStr.append("," + materialBean.getName());
+            }
 
             list.add(materialBean);
 
@@ -156,6 +250,9 @@ public class CookbookProcessor implements PageProcessor {
      */
     private List<MaterialBean> parseAssistant(Element div) {
         ArrayList<MaterialBean> list = new ArrayList<MaterialBean>();
+        if (div == null){
+            return list;
+        }
 
         Elements lis = div.getElementsByTag("li");
         int size = lis.size();
@@ -175,7 +272,12 @@ public class CookbookProcessor implements PageProcessor {
                 materialBean.setImg(img.attr("src"));
             }
 
-
+            if (TextUtil.isEmpty(materialStr.toString())){
+                materialStr.append(materialBean.getName());
+            }else {
+                materialStr.append("," + materialBean.getName());
+            }
+            materialBean.setType(2);
             list.add(materialBean);
 
         }
@@ -194,10 +296,15 @@ public class CookbookProcessor implements PageProcessor {
         if (stepStr == null) {
             return null;
         }
+        ArrayList<StepBean> stepList = new ArrayList<StepBean>();
         Element stepContent = getElement(stepStr);
+        if (stepContent == null){
+            return stepList;
+
+        }
         Elements childs = stepContent.children();
         int size = childs.size();
-        ArrayList<StepBean> stepList = new ArrayList<StepBean>();
+
         for (int i = 0; i < size; i++){
             Element child = childs.get(i);
            String tagName = child.tagName();
@@ -206,7 +313,7 @@ public class CookbookProcessor implements PageProcessor {
                oneStep =  parsePerStep(child);
            }else if (tagName.equalsIgnoreCase("p")){//纯图片
                Element img = child.children().first();
-               if (img.tagName().equalsIgnoreCase("img")){
+               if (img != null && img.tagName().equalsIgnoreCase("img")){
                    oneStep = new StepBean();
                    oneStep.setImg(img.attr("src"));
                }
@@ -257,5 +364,23 @@ public class CookbookProcessor implements PageProcessor {
 
         return step;
     }
+
+    //接收水果爬取完成的事件
+    public void onApplicationEvent(Event event) {
+        if (event.getOp() == Constant.EventType.MONTH_FRUIT_DONE){
+//            start();
+        }
+    }
+
+    /**
+     * 开始爬取
+     */
+    public void start(){
+        fruits = fruitInfoService.getFruits();
+        Spider.create(this).addPipeline(new ConsolePipeline()).addUrl(getUrl("芒果")).thread(4).run();
+
+
+    }
+
 
 }

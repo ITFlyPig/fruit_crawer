@@ -1,17 +1,15 @@
 package com.wangyuelin.crawer.model;
 
-public class Tag {
+import java.io.Serializable;
+
+public class Tag implements Serializable {
     private String tag;//标签
-    private String tagText;//标签的文字
     private String childSText;//子标签的文字
 
     public String getTag() {
         return tag;
     }
 
-    public String getTagText() {
-        return tagText;
-    }
 
     public String getChildSText() {
         return childSText;
@@ -21,9 +19,6 @@ public class Tag {
         this.tag = tag;
     }
 
-    public void setTagText(String tagText) {
-        this.tagText = tagText;
-    }
 
     public void setChildSText(String childSText) {
         this.childSText = childSText;
@@ -31,6 +26,6 @@ public class Tag {
 
     @Override
     public String toString() {
-        return " tagText:" + tagText + "  childSText:" + childSText;
+        return " tag:" + tag + "  childSText:" + childSText;
     }
 }

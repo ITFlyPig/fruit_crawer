@@ -5,7 +5,7 @@
     <settings>
         <setting name="logImpl" value="LOG4J"/>
     </settings>
-    
+
     <!-- 实体类,简称 -设置别名 -->
     <typeAliases>
         <!-- 单个别名定义 <typeAlias alias="User2" type="com.wangyuelin.model.User22" /> -->
